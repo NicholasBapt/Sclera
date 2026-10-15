@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/mainLayout";
 import { Home } from "../pages/Home";
-import { Funcionarios } from "../pages/Funcionarios";
+import { Employees } from "../pages/Employees";
 import { NotFound } from "../pages/NotFound";
 import { Dashboard } from "../pages/Dashboard";
 import { Contratos } from "../pages/Contratos";
@@ -32,7 +32,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "funcionarios",
-        element: <Funcionarios />,
+        element: <Employees />,
       },
       {
         path: "contratos",
