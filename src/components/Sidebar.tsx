@@ -41,7 +41,7 @@ export default function Sidebar({
               text={"Dashboard"}
             />
           </Link>
-          <Link to="/funcionarios">
+          <Link to="/employees">
             <ButtonIcon
               icon={TodosFunc}
               size={"md"}

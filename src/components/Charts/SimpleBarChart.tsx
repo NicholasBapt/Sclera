@@ -49,23 +49,14 @@ export default function SimpleBarChart({ data }: SimpleBarChartProps) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isCompact) {
-      setCurrentPage(0);
-      return;
-    }
-
-    if (currentPage > totalPages - 1) {
-      setCurrentPage(totalPages - 1);
-    }
-  }, [currentPage, isCompact, totalPages]);
+  const activePage = isCompact ? Math.min(currentPage, totalPages - 1) : 0;
 
   const chartData = isCompact
-    ? data.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage)
+    ? data.slice(activePage * itemsPerPage, (activePage + 1) * itemsPerPage)
     : data;
 
   const showPageControl = isCompact && totalPages > 1;
-  const isLastPage = currentPage === totalPages - 1;
+  const isLastPage = activePage === totalPages - 1;
 
   const handlePageControlClick = () => {
     if (isLastPage) {
