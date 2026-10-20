@@ -4,11 +4,13 @@ import InputField from "./FormComponents/Inputs/InputField";
 import Text from "./Text";
 import {
   createEmployee,
+  updateEmployee,
   type CreateEmployeeData,
   type Employee,
 } from "../services/api";
 
 interface EmployeeFormProps {
+  employee?: Employee | null;
   onSuccess: (employee: Employee) => void;
 }
 
@@ -20,10 +22,26 @@ const initialForm: CreateEmployeeData = {
   status: "present",
 };
 
-export default function EmployeeForm({ onSuccess }: EmployeeFormProps) {
-  const [form, setForm] = useState<CreateEmployeeData>(initialForm);
+export default function EmployeeForm({
+  employee,
+  onSuccess,
+}: EmployeeFormProps) {
+  const [form, setForm] = useState<CreateEmployeeData>(
+    employee
+      ? {
+          name: employee.name,
+          email: employee.email,
+          department: employee.department,
+          role: employee.role,
+          status: employee.status,
+        }
+      : { ...initialForm },
+  );
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isEditing = Boolean(employee);
 
   function updateField<K extends keyof CreateEmployeeData>(
     field: K,
@@ -41,13 +59,17 @@ export default function EmployeeForm({ onSuccess }: EmployeeFormProps) {
     setError(null);
 
     try {
-      const employee = await createEmployee(form);
-      setForm({ ...initialForm });
-      onSuccess(employee);
+      const result = employee
+        ? await updateEmployee(employee.id, form)
+        : await createEmployee(form);
+
+      onSuccess(result);
+
+      if (!employee) {
+        setForm({ ...initialForm });
+      }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Erro ao cadastrar funcionário",
-      );
+      setError(err instanceof Error ? err.message : "Error saving employee");
     } finally {
       setSaving(false);
     }
@@ -118,7 +140,7 @@ export default function EmployeeForm({ onSuccess }: EmployeeFormProps) {
 
       <div className="flex justify-end">
         <Button type="submit" size="sm" disabled={saving}>
-          {saving ? "Saving..." : "Add employee"}
+          {saving ? "Saving..." : isEditing ? "Save changes" : "Add employee"}
         </Button>
       </div>
     </form>

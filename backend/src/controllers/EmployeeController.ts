@@ -91,4 +91,119 @@ export class EmployeeController {
       });
     }
   }
+
+  async update(req: Request, res: Response) {
+    try {
+      const id = Number(req.params.id);
+
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        return res.status(400).json({
+          message: "Invalid employee ID",
+        });
+      }
+
+      const { name, email, department, role, status } = req.body ?? {};
+
+      const fields = [name, email, department, role];
+
+      if (fields.some((value) => typeof value !== "string" || !value.trim())) {
+        return res.status(400).json({
+          message: "All employee fields are required",
+        });
+      }
+
+      if (
+        name.length > 150 ||
+        email.length > 150 ||
+        department.length > 100 ||
+        role.length > 100
+      ) {
+        return res.status(400).json({
+          message: "One or more fields exceed the maximum length",
+        });
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({
+          message: "Invalid email address",
+        });
+      }
+
+      if (!["present", "absent", "leave"].includes(status)) {
+        return res.status(400).json({
+          message: "Invalid employee status",
+        });
+      }
+
+      const [result] = await pool.execute<ResultSetHeader>(
+        `UPDATE employees
+       SET name = ?, email = ?, department = ?, role = ?, status = ?
+       WHERE id = ?`,
+        [name.trim(), email.trim(), department.trim(), role.trim(), status, id],
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          message: "Employee not found",
+        });
+      }
+
+      const [employees] = await pool.execute<Employee[]>(
+        `SELECT id, name, email, department, role, status
+       FROM employees
+       WHERE id = ?`,
+        [id],
+      );
+
+      return res.json(employees[0]);
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "ER_DUP_ENTRY"
+      ) {
+        return res.status(409).json({
+          message: "An employee with this email already exists",
+        });
+      }
+
+      console.error("Error updating employee:", error);
+
+      return res.status(500).json({
+        message: "Internal error updating employee",
+      });
+    }
+  }
+
+  async delete(req: Request, res: Response) {
+    try {
+      const id = Number(req.params.id);
+
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        return res.status(400).json({
+          message: "Invalid employee ID",
+        });
+      }
+
+      const [result] = await pool.execute<ResultSetHeader>(
+        "DELETE FROM employees WHERE id = ?",
+        [id],
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          message: "Employee not found",
+        });
+      }
+
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+
+      return res.status(500).json({
+        message: "Internal error deleting employee",
+      });
+    }
+  }
 }

@@ -57,3 +57,36 @@ export async function createEmployee(
 
   return response.json();
 }
+
+export async function updateEmployee(
+  id: number,
+  data: CreateEmployeeData,
+): Promise<Employee> {
+  const response = await fetch(`http://localhost:3333/employees/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.message || "Error updating employee");
+  }
+
+  return response.json();
+}
+
+export async function deleteEmployee(id: number): Promise<void> {
+  const response = await fetch(`http://localhost:3333/employees/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.message || "Error deleting employee");
+  }
+}
