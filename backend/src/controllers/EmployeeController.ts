@@ -2,6 +2,19 @@ import { Request, Response } from "express";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../database/connection";
 
+interface DepartmentRow extends RowDataPacket {
+  id: number;
+}
+
+async function findDepartmentId(name: string): Promise<number | null> {
+  const [departments] = await pool.execute<DepartmentRow[]>(
+    "SELECT id FROM departments WHERE name = ?",
+    [name.trim()],
+  );
+
+  return departments[0]?.id ?? null;
+}
+
 interface Employee extends RowDataPacket {
   id: number;
   name: string;
@@ -15,15 +28,25 @@ export class EmployeeController {
   async list(_req: Request, res: Response) {
     try {
       const [employees] = await pool.query<Employee[]>(
-        "SELECT id, name, email, department, role, status FROM employees",
+        `SELECT
+        e.id,
+        e.name,
+        e.email,
+        d.name AS department,
+        e.role,
+        e.status
+      FROM employees e
+      LEFT JOIN departments d
+        ON e.department_id = d.id
+      ORDER BY e.id`,
       );
 
       return res.json(employees);
     } catch (error) {
-      console.error("Erro ao consultar funcionários:", error);
+      console.error("Error fetching employees:", error);
 
       return res.status(500).json({
-        message: "Erro interno ao consultar funcionários",
+        message: "Internal error fetching employees",
       });
     }
   }
@@ -58,12 +81,27 @@ export class EmployeeController {
         });
       }
 
-      const [result] = await pool.execute<ResultSetHeader>(
-        `INSERT INTO employees (name, email, department, role, status)
-         VALUES (?, ?, ?, ?, ?)`,
-        [name.trim(), email.trim(), department.trim(), role.trim(), status],
-      );
+      const departmentId = await findDepartmentId(department);
 
+      if (departmentId === null) {
+        return res.status(400).json({
+          message: "Department does not exist",
+        });
+      }
+
+      const [result] = await pool.execute<ResultSetHeader>(
+        `INSERT INTO employees
+    (name, email, department, department_id, role, status)
+   VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          name.trim(),
+          email.trim(),
+          department.trim(),
+          departmentId,
+          role.trim(),
+          status,
+        ],
+      );
       return res.status(201).json({
         id: result.insertId,
         name: name.trim(),
@@ -135,11 +173,32 @@ export class EmployeeController {
         });
       }
 
+      const departmentId = await findDepartmentId(department);
+
+      if (departmentId === null) {
+        return res.status(400).json({
+          message: "Department does not exist",
+        });
+      }
+
       const [result] = await pool.execute<ResultSetHeader>(
         `UPDATE employees
-       SET name = ?, email = ?, department = ?, role = ?, status = ?
-       WHERE id = ?`,
-        [name.trim(), email.trim(), department.trim(), role.trim(), status, id],
+   SET name = ?,
+       email = ?,
+       department = ?,
+       department_id = ?,
+       role = ?,
+       status = ?
+   WHERE id = ?`,
+        [
+          name.trim(),
+          email.trim(),
+          department.trim(),
+          departmentId,
+          role.trim(),
+          status,
+          id,
+        ],
       );
 
       if (result.affectedRows === 0) {
