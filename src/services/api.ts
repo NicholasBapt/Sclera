@@ -3,6 +3,11 @@ export interface User {
   name: string;
 }
 
+export interface Department {
+  id: number;
+  name: string;
+}
+
 const API_URL = "http://localhost:3333";
 
 export async function getUsers(): Promise<User[]> {
@@ -89,4 +94,14 @@ export async function deleteEmployee(id: number): Promise<void> {
 
     throw new Error(error?.message || "Error deleting employee");
   }
+}
+
+export async function getDepartments(): Promise<Department[]> {
+  const response = await fetch("http://localhost:3333/departments");
+
+  if (!response.ok) {
+    throw new Error("Error fetching departments");
+  }
+
+  return response.json();
 }

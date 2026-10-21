@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import userRoutes from "./routes/userRoutes";
 import employeeRoutes from "./routes/employeeRoutes";
+import departmentRoutes from "./routes/departmentRoutes";
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.get("/health", (_req, res) => {
 
 app.use("/users", userRoutes);
 app.use("/employees", employeeRoutes);
+app.use("/departments", departmentRoutes);
 
 export default app;

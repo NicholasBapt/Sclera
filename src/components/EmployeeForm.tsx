@@ -1,12 +1,14 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Button from "./Button";
 import InputField from "./FormComponents/Inputs/InputField";
 import Text from "./Text";
 import {
   createEmployee,
   updateEmployee,
+  getDepartments,
   type CreateEmployeeData,
   type Employee,
+  type Department,
 } from "../services/api";
 
 interface EmployeeFormProps {
@@ -40,6 +42,24 @@ export default function EmployeeForm({
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
+  const [departmentError, setDepartmentError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const data = await getDepartments();
+        setDepartments(data);
+      } catch {
+        setDepartmentError("Unable to load departments");
+      } finally {
+        setLoadingDepartments(false);
+      }
+    }
+
+    fetchDepartments();
+  }, []);
 
   const isEditing = Boolean(employee);
 
@@ -97,14 +117,31 @@ export default function EmployeeForm({
           disabled={saving}
         />
 
-        <InputField
-          label="Department"
-          value={form.department}
-          onChange={(event) => updateField("department", event.target.value)}
-          required
-          maxLength={100}
-          disabled={saving}
-        />
+        <div className="flex flex-col gap-0.5">
+          <Text variant="body-sm">Department</Text>
+
+          <select
+            value={form.department}
+            onChange={(event) => updateField("department", event.target.value)}
+            disabled={saving || loadingDepartments || Boolean(departmentError)}
+            required
+            className="w-full h-10 rounded-lg border border-blue-light bg-cloudy-base text-blue-light px-3 py-2 text-sm outline-none transition focus:bg-cloudy-light disabled:opacity-50"
+          >
+            <option value="">
+              {loadingDepartments
+                ? "Loading departments..."
+                : "Select a department"}
+            </option>
+
+            {departments.map((department) => (
+              <option key={department.id} value={department.name}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+
+          {departmentError && <Text variant="body-sm">{departmentError}</Text>}
+        </div>
 
         <InputField
           label="Role"
@@ -139,7 +176,18 @@ export default function EmployeeForm({
       {error && <Text variant="body-sm">{error}</Text>}
 
       <div className="flex justify-end">
-        <Button type="submit" size="sm" disabled={saving}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={
+            saving ||
+            loadingDepartments ||
+            Boolean(departmentError) ||
+            !departments.some(
+              (department) => department.name === form.department,
+            )
+          }
+        >
           {saving ? "Saving..." : isEditing ? "Save changes" : "Add employee"}
         </Button>
       </div>
