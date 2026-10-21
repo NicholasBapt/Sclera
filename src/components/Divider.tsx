@@ -9,7 +9,7 @@ export const dividerVariants = cva(
       variant: {
         primary: "bg-blue-light",
         secondary: "bg-blue-base",
-        tertiary: "bg-cloudy-light",
+        tertiary: "bg-blue-base",
       },
       size: {
         md: "h-px my-2",
