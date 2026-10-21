@@ -31,7 +31,7 @@ export const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: "funcionarios",
+        path: "employees",
         element: <Employees />,
       },
       {
