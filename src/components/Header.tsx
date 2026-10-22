@@ -1,43 +1,32 @@
-import Bell from "../assets/icons/Bell.svg?react";
-import User from "../assets/icons/User.svg?react";
-import { cva, type VariantProps } from "class-variance-authority";
-import ButtonIcon from "./IconButton";
-import { Link } from "react-router-dom";
-import Divider from "./Divider";
-import Text from "./Text";
+import { useLocation } from 'react-router-dom'
+import VisualIcon from './ui/VisualIcon'
 
-export const headerVariants = cva("pl-4 flex flex-col w-full justify-start", {
-  variants: {
-    variant: {
-      primary: "",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-  },
-});
+type HeaderProps = { onMenuClick: () => void }
 
-interface HeaderProps
-  extends VariantProps<typeof headerVariants>, React.ComponentProps<"header"> {
-  as?: keyof React.JSX.IntrinsicElements;
+const pageNames: Record<string, string> = {
+  '/dashboard': 'Overview',
+  '/employees': 'People',
+  '/contratos': 'Contracts',
 }
 
-export default function Header({ variant, className, ...props }: HeaderProps) {
+export default function Header({ onMenuClick }: HeaderProps) {
+  const location = useLocation()
+  const title = pageNames[location.pathname] ?? 'Overview'
+  const date = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date())
+
   return (
-    <header className={headerVariants({ variant, className })} {...props}>
-      <div className="flex items-center gap-3 justify-end">
-        <div className="flex flex-row justify-end gap-2 ">
-          <ButtonIcon icon={Bell} size={"sm"} variant={"header"} />
-          <Link to="/user">
-            <ButtonIcon icon={User} size={"sm"} variant={"header"} />
-          </Link>
-        </div>
-        <div className="flex flex-col">
-          <Text variant="body-sm-bold">Nicholas Baptista</Text>
-          <Text variant="body-sm">nicholas.i</Text>
-        </div>
+    <header className="topbar">
+      <div className="topbar-left">
+        <button type="button" onClick={onMenuClick} aria-label="Open navigation" className="mobile-menu-button"><VisualIcon name="menu" /></button>
+        <span className="topbar-kicker">WORKSPACE</span>
+        <span className="topbar-slash">/</span>
+        <span className="topbar-current">{title}</span>
       </div>
-      <Divider variant="secondary" className="mt-3" />
+      <div className="topbar-right">
+        <span className="topbar-date">{date}</span>
+        <span className="topbar-divider" />
+        <div className="topbar-user"><span className="user-avatar">S</span><div><strong>Sclera workspace</strong><small>Local development</small></div></div>
+      </div>
     </header>
-  );
+  )
 }

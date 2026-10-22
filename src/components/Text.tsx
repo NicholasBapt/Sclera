@@ -1,48 +1,13 @@
-import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import React from 'react'
 
-export const textVariants = cva("font-sans", {
-  variants: {
-    variant: {
-      "heading-lg": "text-3xl font-semibold",
-      "heading-lg-regular": "text-3xl",
-      "heading-sm": "text-lg font-semibold",
-      "body-md": "text-base leading-6",
-      "body-md-bold": "text-base leading-6 font-semibold",
-      "body-sm": "text-sm leading-5",
-      "body-sm-bold": "text-sm leading-5 font-semibold",
-    },
-    textColor: {
-      primary: "text-white",
-      secondary: "text-blue-light",
-    },
-  },
-  defaultVariants: {
-    variant: "body-md",
-    textColor: "primary",
-  },
-});
-
-interface TextProps extends VariantProps<typeof textVariants> {
-  as?: keyof React.JSX.IntrinsicElements;
-  className?: string;
-  children?: React.ReactNode;
+type TextProps = {
+  as?: keyof React.JSX.IntrinsicElements
+  variant?: 'heading-lg' | 'heading-lg-regular' | 'heading-sm' | 'body-md' | 'body-md-bold' | 'body-sm' | 'body-sm-bold'
+  textColor?: 'primary' | 'secondary'
+  className?: string
+  children?: React.ReactNode
 }
 
-export default function Text({
-  as = "span",
-  variant,
-  className,
-  children,
-  textColor,
-  ...props
-}: TextProps) {
-  return React.createElement(
-    as,
-    {
-      className: textVariants({ variant, className, textColor }),
-      ...props,
-    },
-    children,
-  );
+export default function Text({ as = 'span', variant = 'body-md', textColor = 'primary', className = '', children }: TextProps) {
+  return React.createElement(as, { className: `text-component text-${variant} text-${textColor} ${className}` }, children)
 }

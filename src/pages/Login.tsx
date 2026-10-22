@@ -1,9 +1,6 @@
-import LoginFirstStep from "../components/LoginSteps/LoginFirstStep";
+import { Link } from 'react-router-dom'
+import VisualIcon from '../components/ui/VisualIcon'
 
 export function Login() {
-  return (
-    <div className="flex flex-col justify-center justify-items-center px-4 py-6 rounded-lg w-full max-w-md bg-blue-dark/50 backdrop-blur-sm">
-      <LoginFirstStep />
-    </div>
-  );
+  return <div className="login-layout"><section className="login-brand-panel"><Link to="/dashboard" className="login-brand">sclera<span>.</span></Link><div className="login-brand-message"><span className="eyebrow eyebrow-inverse">BETTER PEOPLE INTELLIGENCE</span><h1>See the whole <em>picture.</em></h1><p>A quieter, clearer way to understand the people behind your organization.</p></div><div className="login-geometry" aria-hidden="true"><span/><span/><span/></div><div className="login-brand-foot">SCLERA · PEOPLE INTELLIGENCE / 2026</div></section><section className="login-form-panel"><div className="login-form-content"><span className="login-form-icon"><VisualIcon name="lock" size={24}/></span><span className="eyebrow">WORKSPACE ACCESS</span><h2>Welcome <em>back.</em></h2><p>Authentication isn't connected yet. Explore the current workspace while sign-in is being developed.</p><div className="login-demo-label"><VisualIcon name="shield" size={18}/> INTERFACE PREVIEW ONLY</div><label className="field-group"><span className="field-label">Email address</span><input className="form-input" disabled placeholder="name@company.com"/></label><label className="field-group"><span className="field-label">Password</span><input className="form-input" disabled type="password" placeholder="••••••••"/></label><button disabled className="action-button action-primary action-md login-disabled">Sign in <VisualIcon name="arrow-right" size={18}/></button><Link className="login-demo-link" to="/dashboard">Continue to demo workspace <VisualIcon name="arrow-up-right" size={18}/></Link></div></section></div>
 }
