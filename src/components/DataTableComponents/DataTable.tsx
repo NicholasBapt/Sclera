@@ -1,65 +1,34 @@
-import { useState } from "react";
-import Pagination from "../Pagination";
-import Table from "./Table";
-import TableBody from "./TableBody";
-import TableCell from "./TableCell";
-import TableHead from "./TableHead";
-import TableHeader from "./TableHeader";
-import TableRow from "./TableRow";
+import { useState, type ReactNode } from 'react'
+import Pagination from '../Pagination'
 
-interface DataTableProps {
-  columns: string[];
-  rows: React.ReactNode[][];
-  rowsPerPage?: number;
+type DataTableProps = {
+  columns: string[]
+  rows: ReactNode[][]
+  rowsPerPage?: number
+  emptyLabel?: string
 }
 
-export default function DataTable({
-  columns,
-  rows,
-  rowsPerPage = 10,
-}: DataTableProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(rows.length / rowsPerPage);
-  const safeTotalPages = Math.max(totalPages, 1);
-  const safeCurrentPage = Math.min(currentPage, safeTotalPages);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const startItem = rows.length === 0 ? 0 : startIndex + 1;
-  const endItem = Math.min(startIndex + rowsPerPage, rows.length);
-  const visibleRows =
-    totalPages > 1 ? rows.slice(startIndex, startIndex + rowsPerPage) : rows;
+export default function DataTable({ columns, rows, rowsPerPage = 10, emptyLabel = 'No records found.' }: DataTableProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const offset = (safePage - 1) * rowsPerPage
+  const visibleRows = rows.slice(offset, offset + rowsPerPage)
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns.map((column) => (
-              <TableHead key={column}>{column}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {visibleRows.map((row, rowIndex) => (
-            <TableRow key={startIndex + rowIndex}>
-              {row.map((cell, cellIndex) => (
-                <TableCell key={cellIndex}>{cell}</TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      {rows.length > rowsPerPage && (
-        <Pagination
-          startItem={startItem}
-          endItem={endItem}
-          totalItems={rows.length}
-          currentPage={safeCurrentPage}
-          totalPages={safeTotalPages}
-          onPageChange={setCurrentPage}
-        />
-      )}
+      <div className="table-scroll">
+        <table className="data-table">
+          <thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>
+          <tbody>
+            {visibleRows.map((row, rowIndex) => <tr key={`${offset + rowIndex}-${String(row[0])}`}>
+              {row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}
+            </tr>)}
+          </tbody>
+        </table>
+        {rows.length === 0 && <div className="table-empty">{emptyLabel}</div>}
+      </div>
+      {rows.length > rowsPerPage && <Pagination startItem={offset + 1} endItem={Math.min(offset + rowsPerPage, rows.length)} totalItems={rows.length} currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />}
     </>
-  );
+  )
 }

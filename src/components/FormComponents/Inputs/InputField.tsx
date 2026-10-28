@@ -1,37 +1,14 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import Text from "../../Text";
-import TextInput from "./TextInput";
+import type { ComponentProps } from 'react'
+import TextInput from './TextInput'
 
-export const inputFieldVariants = cva("flex flex-col gap-0.5", {
-  variants: {
-    variant: {
-      regular: "",
-      last: "mb-0",
-    },
-  },
-  defaultVariants: {
-    variant: "regular",
-  },
-});
+type InputFieldProps = Omit<ComponentProps<typeof TextInput>, 'variant'> & { label: string }
 
-interface InputFieldProps
-  extends
-    Omit<React.ComponentProps<typeof TextInput>, "size" | "variant">,
-    VariantProps<typeof inputFieldVariants> {
-  label: string;
-  className?: string;
-}
-
-export default function InputField({
-  label,
-  variant,
-  className,
-  ...inputProps
-}: InputFieldProps) {
+export default function InputField({ label, id, className = '', ...inputProps }: InputFieldProps) {
+  const inputId = id || `input-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
   return (
-    <div className={inputFieldVariants({ variant, className })}>
-      <Text variant="body-sm">{label}</Text>
-      <TextInput {...inputProps} />
-    </div>
-  );
+    <label className={`field-group ${className}`} htmlFor={inputId}>
+      <span className="field-label">{label}</span>
+      <TextInput id={inputId} {...inputProps} />
+    </label>
+  )
 }
