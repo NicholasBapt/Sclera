@@ -4,15 +4,7 @@ import pool from "../database/connection";
 
 interface DepartmentRow extends RowDataPacket {
   id: number;
-}
-
-async function findDepartmentId(name: string): Promise<number | null> {
-  const [departments] = await pool.execute<DepartmentRow[]>(
-    "SELECT id FROM departments WHERE name = ?",
-    [name.trim()],
-  );
-
-  return departments[0]?.id ?? null;
+  name: string;
 }
 
 interface Employee extends RowDataPacket {
@@ -20,6 +12,7 @@ interface Employee extends RowDataPacket {
   name: string;
   email: string;
   department: string;
+  departmentId: number | null;
   role: string;
   status: "present" | "absent" | "leave";
 }
@@ -32,6 +25,7 @@ export class EmployeeController {
         e.id,
         e.name,
         e.email,
+        e.department_id AS departmentId,
         d.name AS department,
         e.role,
         e.status
@@ -40,7 +34,6 @@ export class EmployeeController {
         ON e.department_id = d.id
       ORDER BY e.id`,
       );
-
       return res.json(employees);
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -57,33 +50,73 @@ export class EmployeeController {
         name,
         email,
         department,
+        departmentId,
         role,
         status = "present",
       } = req.body ?? {};
 
-      const fields = [name, email, department, role];
+      const fields = [name, email, role];
 
       if (fields.some((value) => typeof value !== "string" || !value.trim())) {
         return res.status(400).json({
-          message: "Nome, e-mail, departamento e cargo são obrigatórios",
+          message: "Name, email and role are required",
         });
       }
 
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (
+        name.trim().length > 150 ||
+        email.trim().length > 150 ||
+        role.trim().length > 100
+      ) {
         return res.status(400).json({
-          message: "E-mail inválido",
+          message: "One or more fields exceed the maximum length",
+        });
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return res.status(400).json({
+          message: "Invalid email address",
         });
       }
 
       if (!["present", "absent", "leave"].includes(status)) {
         return res.status(400).json({
-          message: "Status inválido",
+          message: "Invalid employee status",
         });
       }
 
-      const departmentId = await findDepartmentId(department);
+      const usingId = departmentId !== undefined;
 
-      if (departmentId === null) {
+      if (
+        usingId &&
+        (!Number.isSafeInteger(departmentId) || departmentId <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid department ID",
+        });
+      }
+
+      if (
+        !usingId &&
+        (typeof department !== "string" ||
+          !department.trim() ||
+          department.trim().length > 100)
+      ) {
+        return res.status(400).json({
+          message: "Invalid department",
+        });
+      }
+
+      const [departments] = await pool.execute<DepartmentRow[]>(
+        usingId
+          ? "SELECT id, name FROM departments WHERE id = ?"
+          : "SELECT id, name FROM departments WHERE name = ?",
+        [usingId ? departmentId : department.trim()],
+      );
+
+      const selectedDepartment = departments[0];
+
+      if (!selectedDepartment) {
         return res.status(400).json({
           message: "Department does not exist",
         });
@@ -91,22 +124,24 @@ export class EmployeeController {
 
       const [result] = await pool.execute<ResultSetHeader>(
         `INSERT INTO employees
-    (name, email, department, department_id, role, status)
-   VALUES (?, ?, ?, ?, ?, ?)`,
+        (name, email, department, department_id, role, status)
+       VALUES (?, ?, ?, ?, ?, ?)`,
         [
           name.trim(),
           email.trim(),
-          department.trim(),
-          departmentId,
+          selectedDepartment.name,
+          selectedDepartment.id,
           role.trim(),
           status,
         ],
       );
+
       return res.status(201).json({
         id: result.insertId,
         name: name.trim(),
         email: email.trim(),
-        department: department.trim(),
+        department: selectedDepartment.name,
+        departmentId: selectedDepartment.id,
         role: role.trim(),
         status,
       });
@@ -118,14 +153,14 @@ export class EmployeeController {
         error.code === "ER_DUP_ENTRY"
       ) {
         return res.status(409).json({
-          message: "Já existe um funcionário com esse e-mail",
+          message: "An employee with this email already exists",
         });
       }
 
-      console.error("Erro ao cadastrar funcionário:", error);
+      console.error("Error creating employee:", error);
 
       return res.status(500).json({
-        message: "Erro interno ao cadastrar funcionário",
+        message: "Internal error creating employee",
       });
     }
   }
@@ -140,28 +175,28 @@ export class EmployeeController {
         });
       }
 
-      const { name, email, department, role, status } = req.body ?? {};
+      const { name, email, department, departmentId, role, status } =
+        req.body ?? {};
 
-      const fields = [name, email, department, role];
+      const fields = [name, email, role];
 
       if (fields.some((value) => typeof value !== "string" || !value.trim())) {
         return res.status(400).json({
-          message: "All employee fields are required",
+          message: "Name, email and role are required",
         });
       }
 
       if (
-        name.length > 150 ||
-        email.length > 150 ||
-        department.length > 100 ||
-        role.length > 100
+        name.trim().length > 150 ||
+        email.trim().length > 150 ||
+        role.trim().length > 100
       ) {
         return res.status(400).json({
           message: "One or more fields exceed the maximum length",
         });
       }
 
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
         return res.status(400).json({
           message: "Invalid email address",
         });
@@ -173,46 +208,84 @@ export class EmployeeController {
         });
       }
 
-      const departmentId = await findDepartmentId(department);
+      const usingId = departmentId !== undefined;
 
-      if (departmentId === null) {
+      if (
+        usingId &&
+        (!Number.isSafeInteger(departmentId) || departmentId <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Invalid department ID",
+        });
+      }
+
+      if (
+        !usingId &&
+        (typeof department !== "string" ||
+          !department.trim() ||
+          department.trim().length > 100)
+      ) {
+        return res.status(400).json({
+          message: "Invalid department",
+        });
+      }
+
+      const [departments] = await pool.execute<DepartmentRow[]>(
+        usingId
+          ? "SELECT id, name FROM departments WHERE id = ?"
+          : "SELECT id, name FROM departments WHERE name = ?",
+        [usingId ? departmentId : department.trim()],
+      );
+
+      const selectedDepartment = departments[0];
+
+      if (!selectedDepartment) {
         return res.status(400).json({
           message: "Department does not exist",
         });
       }
 
-      const [result] = await pool.execute<ResultSetHeader>(
+      await pool.execute(
         `UPDATE employees
-   SET name = ?,
-       email = ?,
-       department = ?,
-       department_id = ?,
-       role = ?,
-       status = ?
-   WHERE id = ?`,
+       SET name = ?,
+           email = ?,
+           department = ?,
+           department_id = ?,
+           role = ?,
+           status = ?
+       WHERE id = ?`,
         [
           name.trim(),
           email.trim(),
-          department.trim(),
-          departmentId,
+          selectedDepartment.name,
+          selectedDepartment.id,
           role.trim(),
           status,
           id,
         ],
       );
 
-      if (result.affectedRows === 0) {
+      const [employees] = await pool.execute<Employee[]>(
+        `SELECT
+         e.id,
+         e.name,
+         e.email,
+         e.department_id AS departmentId,
+         d.name AS department,
+         e.role,
+         e.status
+       FROM employees e
+       LEFT JOIN departments d
+         ON e.department_id = d.id
+       WHERE e.id = ?`,
+        [id],
+      );
+
+      if (employees.length === 0) {
         return res.status(404).json({
           message: "Employee not found",
         });
       }
-
-      const [employees] = await pool.execute<Employee[]>(
-        `SELECT id, name, email, department, role, status
-       FROM employees
-       WHERE id = ?`,
-        [id],
-      );
 
       return res.json(employees[0]);
     } catch (error) {

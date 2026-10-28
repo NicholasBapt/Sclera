@@ -27,6 +27,7 @@ export interface Employee {
   name: string;
   email: string;
   department: string;
+  departmentId?: number | null;
   role: string;
   status: EmployeeStatus;
 }
@@ -41,7 +42,7 @@ export async function getEmployees(): Promise<Employee[]> {
   return response.json();
 }
 
-export type CreateEmployeeData = Omit<Employee, "id">;
+export type CreateEmployeeData = Omit<Employee, "id" | "departmentId">;
 
 export async function createEmployee(
   data: CreateEmployeeData,
