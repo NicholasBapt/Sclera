@@ -8,6 +8,14 @@ Built with React, TypeScript, Node.js, Express, and MySQL, the project explores 
 
 **Project status:** Active development.
 
+### Try Sclera
+
+**[Launch Live Demo](https://sclera-taupe.vercel.app/dashboard)**
+
+Explore the workforce dashboard, employee directory, search, filters, and data visualizations directly in your browser.
+
+The public demo uses fictional employee data and operates in read-only mode. No installation or account is required.
+
 ## Preview
 
 ### Workforce Dashboard
