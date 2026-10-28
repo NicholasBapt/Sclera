@@ -1,3 +1,7 @@
+import { demoDepartments, demoEmployees } from "../data/demoEmployees";
+
+export const isDemoMode = import.meta.env.MODE === "demo";
+
 export interface User {
   id: number;
   name: string;
@@ -33,10 +37,14 @@ export interface Employee {
 }
 
 export async function getEmployees(): Promise<Employee[]> {
-  const response = await fetch("http://localhost:3333/employees");
+  if (isDemoMode) {
+    return demoEmployees.map((employee) => ({ ...employee }));
+  }
+
+  const response = await fetch(`${API_URL}/employees`);
 
   if (!response.ok) {
-    throw new Error("Erro ao buscar funcionários");
+    throw new Error("Error fetching employees");
   }
 
   return response.json();
@@ -47,6 +55,10 @@ export type CreateEmployeeData = Omit<Employee, "id" | "departmentId">;
 export async function createEmployee(
   data: CreateEmployeeData,
 ): Promise<Employee> {
+  if (isDemoMode) {
+    throw new Error("Employee records cannot be modified in demo mode.");
+  }
+
   const response = await fetch("http://localhost:3333/employees", {
     method: "POST",
     headers: {
@@ -68,6 +80,10 @@ export async function updateEmployee(
   id: number,
   data: CreateEmployeeData,
 ): Promise<Employee> {
+  if (isDemoMode) {
+    throw new Error("Employee records cannot be modified in demo mode.");
+  }
+
   const response = await fetch(`http://localhost:3333/employees/${id}`, {
     method: "PUT",
     headers: {
@@ -86,6 +102,10 @@ export async function updateEmployee(
 }
 
 export async function deleteEmployee(id: number): Promise<void> {
+  if (isDemoMode) {
+    throw new Error("Employee records cannot be modified in demo mode.");
+  }
+
   const response = await fetch(`http://localhost:3333/employees/${id}`, {
     method: "DELETE",
   });
@@ -98,7 +118,11 @@ export async function deleteEmployee(id: number): Promise<void> {
 }
 
 export async function getDepartments(): Promise<Department[]> {
-  const response = await fetch("http://localhost:3333/departments");
+  if (isDemoMode) {
+    return demoDepartments;
+  }
+
+  const response = await fetch(`${API_URL}/departments`);
 
   if (!response.ok) {
     throw new Error("Error fetching departments");
